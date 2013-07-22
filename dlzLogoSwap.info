@@ -1,0 +1,6 @@
+name = dlzLogoSwap
+description = This module will allow you to schedule a date and time to swap your logo for an alternate one.
+core = 7.x
+package = dlzLogoSwap
+version = 0.1-dev
+configure = admin/config/content/dlzlogoswap

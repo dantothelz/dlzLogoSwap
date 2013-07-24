@@ -1,19 +1,44 @@
 <?php
 
-function dlzLogoSwap_page_build(){
+/**
+ * Implements hook_page_build().
+ */
+function dlzLogoSwap_page_alter(&$page){
 //	global $theme_key;
-	global $conf;
+	//global $conf;
+
+	//dsm(var_dump($GLOBALS));
 //	$conf['theme_settings']['default_logo'] = 0;
 	//$conf['theme_settings']['logo_path'] = "sites/default/files/bunnyavatar.jpg";
 //	$conf['theme_settings']['logo_path'] = "http://1.bp.blogspot.com/-GHE6uH6wx-4/TpFTsxfCIII/AAAAAAAAAKo/k9r8F6ZsNB4/s1600/Smurf_Wallpaper_oiq2.jpg";
 //	$logo = variable_get($theme_key . '_logo');
 	//dpm(print_r($conf['theme_settings'], true));
 	//dpm("x".print_r($GLOBALS, true));
-	if(_dlzLogoSwap_checkIsLogoSwapped()){
-		$conf['theme_settings']['default_logo'] = 0;
-	} else {
-		$conf['theme_settings']['default_logo'] = 1;
+
+	$theme_settings = variable_get("theme_settings", -1);
+
+	//dsm($theme_settings);
+
+	if (is_array($theme_settings)) {
+		if (_dlzLogoSwap_checkIsLogoSwapped()) {
+			//$conf['theme_settings']['default_logo'] = FALSE;
+			$theme_settings['logo_path'] = variable_get("dlzLogoSwap_logo_path", $theme_settings['logo_path']); //"themes/bartik/logo2.png";
+			dsm("Using: ". $theme_settings['logo_path']);
+			dsm($page);
+		}
+		else {
+			//$theme_settings['logo_path'] = "themes/bartik/logo2.png";
+			//$conf['theme_settings']['default_logo'] = TRUE;
+		}
 	}
+
+	// variable_get('somevar'., 'some default value if var not found');
+
+}
+
+function dlzLogoSwap_preprocess_page(&$variables) {
+	die("frog");
+	dsm($variables);
 }
 
 
@@ -31,10 +56,11 @@ function dlzLogoSwap_page_build(){
 function _dlzLogoSwap_compare_date($testDateArray, $baseDate = null){
 	$base_date = "";
 
-	if($baseDate != null){
+	if ($baseDate != NULL) {
 		$base_date = $baseDate['year'] . "-" . $baseDate['month'] . "-" . $baseDate['day'];
-	} else {
-		$base_date = date("Y") . "-" . date("n") . "-" . date("j");
+	} 
+	else {
+		$base_date = date("Y-n-j");
 	}
 
 	$test_date = $testDateArray['year'] . "-" . $testDateArray['month'] . "-" . $testDateArray['day'];
@@ -43,28 +69,16 @@ function _dlzLogoSwap_compare_date($testDateArray, $baseDate = null){
 }
 
 function _dlzLogoSwap_checkIsLogoSwapped(){
-	$is_enabled = variable_get("dlzLogoSwap_enabled", 0);
-	if($is_enabled == 0){
-		return false;
-	} else {
-		return true;
-	}
+	$is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
+	//dsm(($is_enabled == 0) ? "Swap Enabled!" : "Swap Disabled!");
+	return (bool) ($is_enabled == 0);
 }
 
 function _dlzLogoSwap_disableLogoSwap(){
 	$is_enabled = variable_get("dlzLogoSwap_enabled", 0);
-	if($is_enabled == 1){
+	if ($is_enabled == 1) {
 		variable_set("dlzLogoSwap_enabled", 0);
 	}
-	/*
-	$settings = variable_get("theme_settings", -1);
-	if(is_array($settings)){
-		if($settings['default_logo'] != 1){
-			$settings['default_logo'] = 1;
-			variable_set("theme_settings", $settings);
-		}
-	}
-	*/
 }
 
 function _dlzLogoSwap_enableLogoSwap(){
@@ -72,15 +86,6 @@ function _dlzLogoSwap_enableLogoSwap(){
 	if($is_enabled == 0){
 		variable_set("dlzLogoSwap_enabled", 1);
 	}
-	/*
-	$settings = variable_get("theme_settings", -1);
-	if(is_array($settings)){
-		if($settings['default_logo'] != 0){
-			$settings['default_logo'] = 0;
-			variable_set("theme_settings", $settings);
-		}
-	}
-	*/
 }
 
 
@@ -137,19 +142,7 @@ function dlzLogoSwap_cron(){
 
 	dpm("dlzLogoSwap_cron ran successfully!");
 }
-/*
-function module_filter_menu() {
-  $items['admin/config/user-interface/modulefilter'] = array(
-    'title' => 'Module filter',
-    'description' => 'Configure settings for Module Filter.',
-    'access arguments' => array('administer module filter'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('module_filter_settings'),
-    'file' => 'module_filter.admin.inc'
-  );
-  return $items;
-}
-*/
+
 
 function dlzLogoSwap_menu(){
 	//die("frog");
@@ -159,18 +152,41 @@ function dlzLogoSwap_menu(){
 		'title' => 'Subscribe',
 		'description' => 'Subscribe to this node',
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array("dlzLogoSwap_schedule_form", 1),
-		'access arguments' => array('create dlzLogoSwap schedules'),
+		'page arguments' => array("dlzLogoSwap_schedule_form"),
+		'access arguments' => array('create dlzLogoSwap schedules'), //@todo create a hook_permissions for this
 		'type' => MENU_LOCAL_TASK,
 	);
 
 	return $items;
 }
 
-function dlzLogoSwap_schedule_form($form, &$form_state, $nid = 0) {
-	global $user;
-	$form = array();
+function dlzLogoSwap_schedule_form($form, &$form_state) {
 	// TODO: Define the form fields as elements of $form
+
+	if (!is_array($form)) {
+		$form = array();
+	}
+
+	$theme_settings = variable_get("theme_settings", -1);
+	$default_logo = "";
+
+	if (is_array($theme_settings) && isset($theme_settings['logo_path'])) {
+		$default_logo = $theme_settings['logo_path'];
+	}
+	else {
+		$default_logo = "";
+	}
+
+
+	$form['dlzLogoSwap_logo_path'] = array(
+		'#title' => t('Path to alternate logo'),
+		'#type' => 'textfield',
+		'#description' => t('Specify the path to the alternate logo to be displayed.'),
+		'#default_value' => variable_get("dlzLogoSwap_logo_path", $default_logo),
+		'#required' => TRUE,
+	);
+
+
 	$form['dlzLogoSwap_start_date'] = array(
 		'#title' => t('Schedule Logo Swap Start'),
 		'#type' => 'date',
@@ -194,19 +210,19 @@ function dlzLogoSwap_schedule_form($form, &$form_state, $nid = 0) {
 		'#default_value' => variable_get("dlzLogoSwap_no_end_date", false),
 	);
 
+	return system_settings_form($form);
+	/* 
+	 * system_setting_form($form) automatically does this for us:
+	 *
+		$form['#submit'][] = 'system_settings_form_submit';
+		$form['submit'] = array(
+	 		'#type' => 'submit',
+	 		'#value' => t("Save Schedule"),
+		);
 
-	$form['#submit'][] = 'system_settings_form_submit';
-	$form['submit'] = array(
-		'#type' => 'submit',
-		'#value' => t("Save Schedule"),
-	);
-
-	$form['nid'] = array(
-		'#type' => 'hidden',
-		'#value' => $nid,
-	);
-
-	return $form;
+		return $form;
+	 *
+	 */
 }
 
 

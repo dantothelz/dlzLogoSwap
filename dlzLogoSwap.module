@@ -1,45 +1,15 @@
 <?php
 
 /**
- * Implements hook_page_build().
+ * Implements hook_preprocess_page().
  */
-function dlzLogoSwap_page_alter(&$page){
-//	global $theme_key;
-	//global $conf;
-
-	//dsm(var_dump($GLOBALS));
-//	$conf['theme_settings']['default_logo'] = 0;
-	//$conf['theme_settings']['logo_path'] = "sites/default/files/bunnyavatar.jpg";
-//	$conf['theme_settings']['logo_path'] = "http://1.bp.blogspot.com/-GHE6uH6wx-4/TpFTsxfCIII/AAAAAAAAAKo/k9r8F6ZsNB4/s1600/Smurf_Wallpaper_oiq2.jpg";
-//	$logo = variable_get($theme_key . '_logo');
-	//dpm(print_r($conf['theme_settings'], true));
-	//dpm("x".print_r($GLOBALS, true));
-
-	$theme_settings = variable_get("theme_settings", -1);
-
-	//dsm($theme_settings);
-
-	if (is_array($theme_settings)) {
-		if (_dlzLogoSwap_checkIsLogoSwapped()) {
-			//$conf['theme_settings']['default_logo'] = FALSE;
-			$theme_settings['logo_path'] = variable_get("dlzLogoSwap_logo_path", $theme_settings['logo_path']); //"themes/bartik/logo2.png";
-			dsm("Using: ". $theme_settings['logo_path']);
-			dsm($page);
-		}
-		else {
-			//$theme_settings['logo_path'] = "themes/bartik/logo2.png";
-			//$conf['theme_settings']['default_logo'] = TRUE;
-		}
-	}
-
-	// variable_get('somevar'., 'some default value if var not found');
-
-}
-
 function dlzLogoSwap_preprocess_page(&$variables) {
-	die("frog");
-	dsm($variables);
+	$default = $variables['logo'];
+	if (_dlzLogoSwap_checkIsLogoSwapped()) {
+		$variables['logo'] = variable_get("dlzLogoSwap_logo_path", $default); //"themes/bartik/logo2.png";
+	}
 }
+
 
 
 /*
@@ -71,7 +41,7 @@ function _dlzLogoSwap_compare_date($testDateArray, $baseDate = null){
 function _dlzLogoSwap_checkIsLogoSwapped(){
 	$is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
 	//dsm(($is_enabled == 0) ? "Swap Enabled!" : "Swap Disabled!");
-	return (bool) ($is_enabled == 0);
+	return (bool) ($is_enabled == TRUE);
 }
 
 function _dlzLogoSwap_disableLogoSwap(){

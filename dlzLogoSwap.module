@@ -11,67 +11,19 @@ function dlzLogoSwap_preprocess_page(&$variables) {
 }
 
 
-
-/*
-  Expects  $testDateArray and $baseDateArray to be associative arrays with the following indecies:
-    month
-    day
-    year
-
-  Returns:
-    < 0 if $testDate < $baseDate,
-    > 0 if $testDate > $baseDate,
-    0 if $testDate = $baseDate
-*/
-/*
-function _dlzLogoSwap_compare_date($testDateArray, $baseDate = null){
-  $base_date = "";
-
-  if ($baseDate != NULL) {
-    $base_date = $baseDate['year'] . "-" . $baseDate['month'] . "-" . $baseDate['day'];
-  }
-  else {
-    $base_date = date("Y-n-j");
-  }
-
-  $test_date = $testDateArray['year'] . "-" . $testDateArray['month'] . "-" . $testDateArray['day'];
-
-  return strtotime($test_date) - strtotime($base_date);
-}
-*/
-
-function _dlzLogoSwap_checkIsLogoSwapped(){
-  $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
-  //dsm(($is_enabled == 0) ? "Swap Enabled!" : "Swap Disabled!");
-  return (bool) ($is_enabled == TRUE);
-}
-
-function _dlzLogoSwap_disableLogoSwap(){
-  $is_enabled = variable_get("dlzLogoSwap_enabled", 0);
-  if ($is_enabled == 1) {
-    variable_set("dlzLogoSwap_enabled", 0);
-  }
-}
-
-function _dlzLogoSwap_enableLogoSwap(){
-  $is_enabled = variable_get("dlzLogoSwap_enabled", 0);
-  if($is_enabled == 0){
-    variable_set("dlzLogoSwap_enabled", 1);
-  }
-}
-
+/**
+ * Implements hook_cron().
+ */
 function dlzLogoSwap_cron(){
   $start_date = variable_get("dlzLogoSwap_start_date", -1);
   $end_date = variable_get("dlzLogoSwap_end_date", -1);
-  $no_end_date = variable_get("dlzLogoSwap_no_end_date", false);
+  $no_end_date = variable_get("dlzLogoSwap_no_end_date", FALSE);
 
   $start = strtotime($start_date);
   $end = strtotime($end_date);
 
-
   // If the start time is now or in the past...
   if ($start <= time()) {
-
     // If there is no end time configured...
     if ($no_end_date == TRUE) {
       // Then we need to make sure the logo swap is enabled.
@@ -85,115 +37,51 @@ function dlzLogoSwap_cron(){
       _dlzLogoSwap_disableLogoSwap();
       return;
     }
-
-    // If the end time is in the future...
-    if ($end > time()) {
-      // Then we need to enable the logo swap.
-      _dlzLogoSwap_enableLogoSwap();
-      return;
+    else { // If the end time is in the future... ($end > time())
+    // Then we need to enable the logo swap.
+    _dlzLogoSwap_enableLogoSwap();
+    return;
     }
   }
-  // If the start time is not now, or in the past... (then it must be in the future...)
-  else {
+  else { // If the start time is not now, or in the past... (then it must be in the future...)
     // Then we need to disable the logo swap.
     _dlzLogoSwap_disableLogoSwap();
+    return;
   }
-
-//  dsm($start_date);
-//  dsm($end_date);
-
-//  die($start_date . "|" . $end_date);
-}
-
-function dlzLogoSwap_cron_old(){
-  $start_date = variable_get("dlzLogoSwap_start_date", -1);
-  $end_date = variable_get("dlzLogoSwap_end_date", -1);
-
-  // If a start date is configured
-  if(is_array($start_date)){
-    // If the start date is in the past or today
-    if(_dlzLogoSwap_compare_date($start_date) <= 0){
-
-      $no_end_date = variable_get("dlzLogoSwap_no_end_date", false);
-      if($no_end_date == true){
-        // Then we need to make sure the logo swap is enabled.
-        _dlzLogoSwap_enableLogoSwap();
-        return;
-      }
-
-      // If the end date is configured
-      if(is_array($end_date)){
-        // If the end date is in the past or today
-        if(_dlzLogoSwap_compare_date($end_date) <= 0){
-          // Then we need to make sure the logo swap is disabled.
-          //die("End Date In Past");
-          _dlzLogoSwap_disableLogoSwap();
-        }
-        // If the end date is in the future
-        else {
-          // Then we need to make sure the logo swap is enabled.
-          //die("End Date In Future");
-          _dlzLogoSwap_enableLogoSwap();
-        }
-      }
-      // If there is no end date configured
-      else {
-        // Then we need to make sure the logo swap is enabled.
-        //die("No End Date");
-        _dlzLogoSwap_enableLogoSwap();
-      }
-    }
-    // If the start date is in the future
-    else {
-      //die("Start Date In Future");
-      // Then we need to make sure the logo swap is disabled.
-      _dlzLogoSwap_disableLogoSwap();
-    }
-  }
-  // If there is no start date configured, we'll do nothing.
-  else {
-    // Do Nothing.
-  }
-
-  dpm("dlzLogoSwap_cron ran successfully!");
 }
 
 
+/**
+ * Implements hook_menu()
+ */
 function dlzLogoSwap_menu(){
-  //die("frog");
   $items = array();
-  //$items['logoswap/config'] = array(
+
   $items['admin/config/content/dlzlogoswap'] = array(
     'title' => 'Subscribe',
     'description' => 'Subscribe to this node',
     'page callback' => 'drupal_get_form',
     'page arguments' => array("dlzLogoSwap_schedule_form"),
-    'access arguments' => array('create dlzLogoSwap schedules'), //@todo create a hook_permissions for this
-    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('create dlzLogoSwap schedules'),
+    'type' => MENU_LOCAL_TASK
   );
 
   return $items;
 }
 
-function dlzLogoSwap_schedule_form($form, &$form_state) {
-  // TODO: Define the form fields as elements of $form
 
-  if (!is_array($form)) {
-    $form = array();
+/**
+ * Implements Form API
+ */
+function dlzLogoSwap_schedule_form($node, &$form_state) {
+  if (!is_array($node)) {
+    $node = array();
   }
 
   $theme_settings = variable_get("theme_settings", -1);
-  $default_logo = "";
+  $default_logo = (is_array($theme_settings) && isset($theme_settings['logo_path'])) ? $theme_settings['logo_path'] : "";
 
-  if (is_array($theme_settings) && isset($theme_settings['logo_path'])) {
-    $default_logo = $theme_settings['logo_path'];
-  }
-  else {
-    $default_logo = "";
-  }
-
-
-  $form['dlzLogoSwap_logo_path'] = array(
+  $node['dlzLogoSwap_logo_path'] = array(
     '#title' => t('Path to alternate logo'),
     '#type' => 'textfield',
     '#description' => t('Specify the path to the alternate logo to be displayed.'),
@@ -201,8 +89,7 @@ function dlzLogoSwap_schedule_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
-
-  $form['dlzLogoSwap_start_date'] = array(
+  $node['dlzLogoSwap_start_date'] = array(
     '#title' => t('Schedule Logo Swap Start'),
     '#type' => 'date_popup',
     '#description' => t('Specify the date when the alternate logo should be displayed.'),
@@ -210,7 +97,7 @@ function dlzLogoSwap_schedule_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
-  $form['dlzLogoSwap_end_date'] = array(
+  $node['dlzLogoSwap_end_date'] = array(
     '#title' => t('Schedule Logo Swap End'),
     '#type' => 'date_popup',
     '#description' => t('Specify the date when the alternate logo should no longer be displayed.'),
@@ -218,41 +105,85 @@ function dlzLogoSwap_schedule_form($form, &$form_state) {
     '#default_value' => variable_get("dlzLogoSwap_end_date", ""),
   );
 
-  $form['dlzLogoSwap_no_end_date'] = array(
+  $node['dlzLogoSwap_no_end_date'] = array(
     '#title' => t('No End Date.'),
     '#type' => 'checkbox',
     '#description' => t('Specify that the alternate logo should not swap out.'),
-    '#default_value' => variable_get("dlzLogoSwap_no_end_date", false),
+    '#default_value' => variable_get("dlzLogoSwap_no_end_date", FALSE),
   );
 
-  return system_settings_form($form);
+  return system_settings_form($node);
   /*
    * system_setting_form($form) automatically does this for us:
    *
-    $form['#submit'][] = 'system_settings_form_submit';
-    $form['submit'] = array(
-       '#type' => 'submit',
-       '#value' => t("Save Schedule"),
-    );
+      $node['#submit'][] = 'system_settings_form_submit';
+      $node['submit'] = array(
+         '#type' => 'submit',
+         '#value' => t("Save Schedule"),
+      );
 
-    return $form;
+      return $node;
    *
    */
 }
 
 
+/**
+ * Form Validation Handler
+ */
 function dlzLogoSwap_schedule_form_validate($form, &$form_state) {
   $start = $form_state['values']['dlzLogoSwap_start_date'];
   $end = $form_state['values']['dlzLogoSwap_end_date'];
-  //$start = $start['year'] . "-" . $start['month'] . "-" . $start['day'];
-  $start_date = strtotime($start);
-  $end_date = strtotime($end);//$end['year'] . "-" . $end['month'] . "-" . $end['day'];
-  //if(_dlzLogoSwap_compare_date($start, $end) >= 0 ){
-  if ($end_date <= $start_date) {
-    form_set_error("dlzLogoSwap_end_date", t("The scheduled end date (%end_date) is on or before the schedule start date (%start_date).", array("%end_date" => $end, "%start_date" => $start)));
+
+  $start_ts = strtotime($start);
+  $end_ts = strtotime($end);
+
+  if ($end_ts <= $start_ts) {
+    $map = array("%end_date" => $end, "%start_date" => $start);
+    $msg = t("The scheduled end date (%end_date) is on or before the schedule start date (%start_date).", $map);
+    form_set_error("dlzLogoSwap_end_date", $msg);
   }
-  //if(_dlzLogoSwap_compare_date($start) < 0){
-  if ($start_date < time()) {
-    form_set_error("dlzLogoSwap_start_date", t("The scheduled start date (%start_date) has already passed.", array("%start_date" => $start_date)));
+
+  if ($start_ts < time()) {
+    $map = array("%start_date" => $start);
+    $msg = t("The scheduled start date (%start_date) has already passed.", $map);
+    form_set_error("dlzLogoSwap_start_date", $msg);
+  }
+}
+
+
+
+/**
+ * Implements hook_permission()
+ */
+function dlzLogoSwap_permission() {
+  return array(
+    'create dlzLogoSwap schedules' => array(
+      'title' => t('Create Logo Swap Schedules'),
+      'description' => t('Schedule swapping the default site logo for an alternative one.'),
+    ),
+  );
+}
+
+
+/**
+ * Private Methods
+ */
+function _dlzLogoSwap_checkIsLogoSwapped(){
+  $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
+  return (bool) ($is_enabled == TRUE);
+}
+
+function _dlzLogoSwap_disableLogoSwap(){
+  $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
+  if ($is_enabled == TRUE) {
+    variable_set("dlzLogoSwap_enabled", FALSE);
+  }
+}
+
+function _dlzLogoSwap_enableLogoSwap(){
+  $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
+  if($is_enabled == FALSE){
+    variable_set("dlzLogoSwap_enabled", TRUE);
   }
 }

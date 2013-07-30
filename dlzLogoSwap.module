@@ -14,7 +14,7 @@ function dlzLogoSwap_preprocess_page(&$variables) {
 /**
  * Implements hook_cron().
  */
-function dlzLogoSwap_cron(){
+function dlzLogoSwap_cron() {
   $start_date = variable_get("dlzLogoSwap_start_date", -1);
   $end_date = variable_get("dlzLogoSwap_end_date", -1);
   $no_end_date = variable_get("dlzLogoSwap_no_end_date", FALSE);
@@ -54,7 +54,7 @@ function dlzLogoSwap_cron(){
 /**
  * Implements hook_menu()
  */
-function dlzLogoSwap_menu(){
+function dlzLogoSwap_menu() {
   $items = array();
 
   $items['admin/config/content/dlzlogoswap'] = array(
@@ -169,21 +169,19 @@ function dlzLogoSwap_permission() {
 /**
  * Private Methods
  */
-function _dlzLogoSwap_checkIsLogoSwapped(){
+function _dlzLogoSwap_checkIsLogoSwapped() {
   $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
   return (bool) ($is_enabled == TRUE);
 }
 
-function _dlzLogoSwap_disableLogoSwap(){
-  $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
-  if ($is_enabled == TRUE) {
+function _dlzLogoSwap_disableLogoSwap() {
+  if (_dlzLogoSwap_checkIsLogoSwapped() == TRUE) {
     variable_set("dlzLogoSwap_enabled", FALSE);
   }
 }
 
-function _dlzLogoSwap_enableLogoSwap(){
-  $is_enabled = variable_get("dlzLogoSwap_enabled", FALSE);
-  if($is_enabled == FALSE){
+function _dlzLogoSwap_enableLogoSwap() {
+  if(_dlzLogoSwap_checkIsLogoSwapped() == FALSE){
     variable_set("dlzLogoSwap_enabled", TRUE);
   }
 }
